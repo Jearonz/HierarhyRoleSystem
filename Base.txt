@@ -1,0 +1,7 @@
+SuperUser	1#1P#*o691#1G/#X.1	9	Admin/Manager/Worker
+User6	1#1q#*yD91#1PB#/(1	6	Worker
+User7	1#1q#*yD91#1PB#/(1	7	Worker
+User8	1#1q#*yD91#1PB#/(1	8	Manager/Worker
+User4	1#1q#*yD91#1PB#/(1	4	Worker
+User5	1#1f#*F791#1kl#Kr1	5	Manager/Worker
+User3	1#1f#*F791#1kl#Kr1	3	Worker

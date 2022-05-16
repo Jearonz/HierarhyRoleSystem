@@ -1,0 +1,472 @@
+import random
+import time
+import datetime
+
+nameLog = "Audit Log.txt"
+nameBase = "Base.txt"
+nameSymbolFile = "Symbol.txt"
+symbols = "qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOPASDFGHJKLZXCVBNM0123456789!@#$%^&()_+"
+banWord = "cancel"
+mainSymbols = "[]{};'\./!@#$%^&*()_+?"
+mainSymbol = " "
+globalFlag = False
+secretFile = "SECRET.txt"
+nonSecFile = "NONSEC.txt"
+gameExe = "GAME.exe"
+newSecretFile = "NewSecretFile.txt"
+virusFlag = False
+
+
+class User:
+    def __init__(self, name, passw, access):
+        self.name = name
+        self.passw = passw
+        self.access = access
+
+    def write(self, user):
+        f = open(nameBase, 'a')
+        f.write(user.name + '\t' + user.passw + '\t' + user.access + '\n')
+        f.close()
+        return 0
+
+
+def coding(msg):
+    size = len(msg)
+    msg2 = str(size) + "*" + msg
+    size = len(msg2)
+    if size % 6 == 0:
+        count = int(size / 6)
+    else:
+        count = int(size / 6 + 1)
+    result = ""
+    it = 0
+    for i in range(0, count):
+        matrix = [['0', '0', '0'], ['0', '0', '0'], ['0', '0', '0']]
+        for j in range(0, 3):
+            for k in range(0, 3):
+                random.seed()
+                matrix[j][k] = random.choice(symbols)
+        if it < len(msg2):
+            matrix[2][2] = msg2[it]
+            it += 1
+        if it < len(msg2):
+            matrix[1][2] = msg2[it]
+            it += 1
+        if it < len(msg2):
+            matrix[0][2] = msg2[it]
+            it += 1
+        if it < len(msg2):
+            matrix[0][1] = msg2[it]
+            it += 1
+        if it < len(msg2):
+            matrix[0][0] = msg2[it]
+            it += 1
+        if it < len(msg2):
+            matrix[1][1] = msg2[it]
+            it += 1
+        for j in range(0, 3):
+            for k in range(0, 3):
+                result += str(matrix[j][k])
+    return result
+
+
+def encoding(msg):
+    res = ""
+    for it in range(0, int(len(msg) / 9)):
+        matrix = [['0', '0', '0'], ['0', '0', '0'], ['0', '0', '0']]
+        tmp = msg[it * 9:it * 9 + 9]
+        it2 = 0
+        for i in range(0, 3):
+            for j in range(0, 3):
+                matrix[i][j] = tmp[it2]
+                it2 += 1
+        res += str(matrix[2][2])
+        res += str(matrix[1][2])
+        res += str(matrix[0][2])
+        res += str(matrix[0][1])
+        res += str(matrix[0][0])
+        res += str(matrix[1][1])
+    it2 = 0
+    for a in res:
+        if a == '*':
+            break
+        it2 += 1
+
+    res = res[it2 + 1:it2 + 1 + int(res[0:it2])]
+    return res
+
+
+def checkSymbol(strX):
+    if len(strX) == 1:
+        for i in range(len(mainSymbols)):
+            if strX == mainSymbols[i]:
+                return 1
+    else:
+        return 0
+
+
+def changeSymbol():
+    while True:
+        mainSymbolX = input("Введите новый главный символ для паролей: ")
+        if checkSymbol(mainSymbolX):
+            global mainSymbol
+            mainSymbol = mainSymbolX
+            x = open(nameSymbolFile, 'w')
+            x.seek(0)
+            x.write(mainSymbol)
+            x.close()
+            print("Успешно.")
+            return mainSymbol
+        else:
+            print("Ошибка, вы ввели неверное количество символов или неправильный символ!")
+
+
+def readBase():
+    array = []
+    try:
+        f = open(nameBase, 'r')
+    except (OSError, IOError):
+        f = open(nameBase, 'w')
+        print(
+            "Здравствуйте! Это первый запуск программы или предыдущая база данных была удалена. Вам необходимо создать суперпользователя.")
+        mainSymbol = changeSymbol()
+        name = str(input("Введите имя для первого пользователя: "))
+        while True:
+            passw = str(input(
+                f"Введите пароль для первого пользователя. Пароль должен содержать 8 символов и состоять из цифр, разделенных {mainSymbol}: "))
+            if not checkPass(passw):
+                print("Добро пожаловать!")
+                f.write(name + '\t' + coding(passw) + '\t' + "su" + '\n')
+                array.append(User(name, coding(passw), "su"))
+                f.close()
+                f = open(nameBase, 'r')
+                global globalFlag
+                globalFlag = True
+                break
+
+    while True:  # цикл чтения данных из файла
+        line = f.readline()  # читаем строчку
+        if not line:  # если строка пустая - файл закончился, выходим из цикла
+            break
+        line = line.split('\t')  # преобразование строчки в массив значений - разделителем является '\t'
+        tmp = line[2]
+        access = "u"
+        if tmp[0] == 's':
+            access = "su"
+        elif tmp[0] == 'a':
+            access = "a"
+        elif tmp[0] == 'b':
+            access = "b"
+        user = User(line[0], line[1], access)
+        array.append(user)
+    f.close()
+    return array
+
+
+def checkPass(passw):
+    if len(passw) < 8 or (len(passw) % 2 == 0):
+        print("Неправильный пароль (Длина пароля меньше 8 символов или остаток от деления на три не равен нулю)")
+        return 1
+    digitA = passw[0::2]
+    dog = passw[1::2]
+    global mainSymbol
+    for j in dog:
+        if j != mainSymbol:
+            print("Использован неверный символ")
+            return 1
+    if digitA.isdigit():
+        return 0
+    else:
+        print("Неправильный пароль (Содержит неверные символы или неправильную последовательность)")
+        return 1
+
+
+def printInfo():
+    print("Информация о всех пользователях системы: ")
+    f = open(nameBase, 'r')
+    while True:
+        line = f.readline()
+        if not line:
+            break
+        print(line)
+
+
+def gameExe():
+    print("Введите любое число")
+    number = int(input())
+    global virusFlag
+    if currentUser.access == 'a':
+        fileS = open(secretFile, 'r')
+        fileNS = open(newSecretFile, 'w')
+        while True:
+            line = fileS.readline()
+            fileNS.write(line)
+            if not line:
+                break
+        fileS.close()
+        fileNS.close()
+        virusFlag = True
+    if number / 2 == 0:
+        print("Вы победили")
+    else:
+        print("Вы проиграли")
+
+
+# main interface
+print("Добро пожаловать!")
+try:
+    x = open(nameSymbolFile, 'r')
+    mainSymbol = x.readline()
+except(OSError, IOError):
+    mainSymbol = " "
+
+while True:
+    array = readBase()
+    currentUser = User
+    if not globalFlag:
+        while True:
+            name = str(input("Введите логин: "))
+            flag = False
+            flag2 = False
+            for tmp in array:
+                if tmp.name == name:
+                    while True:
+                        password = str(input("Введите пароль: "))
+                        if password == encoding(tmp.passw):
+                            flag = True
+                            currentUser = tmp
+                            break
+                        else:
+                            print("Неверный пароль")
+                            print("Повторите попытку через 3...")
+                            time.sleep(1)
+                            print("2...")
+                            time.sleep(1)
+                            print("1...")
+                            time.sleep(1)
+                if flag:
+                    flag2 = True
+                    break
+            if flag2:
+                break
+            print("Неверный логин")
+    else:
+        globalFlag = False
+        currentUser = array[0]
+    print("Успешный вход")
+
+    try:
+        al = open(nameLog, 'a')
+    except (OSError, IOError):
+        al = open(nameLog, 'w')
+    time1 = datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")
+    al.write(currentUser.name + '\t' + time1 + '\t')
+    al.close()
+
+    while True:
+        if currentUser.access == "su":
+            print("Вы являетесь админинстратором.")
+            print("0 - добавить нового пользователя.")
+            print("1 - изменить пользователя.")
+            print("2 - изменить главный символ для паролей.")
+            print("3 - показать информацию о всех пользователях")
+            print("Сменить пользователя или выйти - любое другое число")
+            var = int(input())
+            if var == 0:
+                while True:
+                    exit = False
+                    while True:
+                        name = str(input(f"Для выхода напишите {banWord}. Введите логин: "))
+                        if name == banWord:
+                            exit = True
+                            break
+                        repeat = False
+                        for tmp in array:
+                            if tmp.name == name:
+                                print("Логин используется")
+                                repeat = True
+                                break
+                        if repeat:
+                            continue
+                        else:
+                            break
+                    if exit:
+                        break
+                    while True:
+                        password = str(input(f"Для выхода напишите {banWord}. Введите пароль, состоящий из цифр, разделенных {mainSymbol}: "))
+                        if password == banWord:
+                            exit = True
+                            break
+                        if checkPass(password):
+                            continue
+                        else:
+                            break
+                    if exit:
+                        break
+                    access = str(input("Введите уровень доступа (u - обычный пользователь, su - администратор): "))
+                    user = User(name, coding(password), access)
+                    res = currentUser.write(user)
+                    if res == 0:
+                        print("Удачно")
+                        array.append(user)
+                        break
+                    else:
+                        print("Ошибка записи в файл")
+            elif var == 1:
+                while True:
+                    exit = False
+                    name = str(input(f"Для выхода напишите {banWord}. Введите имя пользователя для изменения:\n"))
+                    if name == banWord:
+                        break
+                    i = 0
+                    while i < len(array):
+                        if name == array[i].name:
+                            print(f"Для выхода напишите {banWord}. Введите новый уровень допуска:")
+                            while True:
+                                newss = input()
+                                if newss == banWord:
+                                    break
+                                if newss == 'su' or newss == 'u':
+                                    array[i].access = newss
+                                    break
+                                else:
+                                    print('Введен неправильный тип допуска, повторите попытку.')
+                            if newss == banWord:
+                                break
+                            f = open(nameBase, 'w')
+                            for user in array:
+                                f.write(user.name + '\t' + user.passw + '\t' + user.access + '\n')
+                            f.close()
+                            print('Успешное изменение.')
+                            exit = True
+                            break
+                        i += 1
+                    if exit:
+                        break
+                    print("Пользователь не найден.")
+            elif var == 2:
+                changeSymbol()
+            elif var == 3:
+                printInfo()
+            else:
+                break
+        elif currentUser.access == 'a':
+            while True:
+                print("Вы обычный пользователь с уровнем допуска А")
+                print("1 - Войти в каталог SECRET")
+                print("2 - Войти в каталог NONSEC")
+                print("exit - Выйти с данной учетной записи")
+                menu = input()
+                if menu == '1':
+                    print("1 - Прочитать файл SECRET.TXT")
+                    print("2 - Записать в файл SECRET.TXT")
+                    print("cancel - Выйти из каталога")
+                    menu2 = input()
+                    if menu2 == '1':
+                        file = open(secretFile, 'r')
+                        while True:
+                            line = file.readline()
+                            print(line)
+                            if not line:
+                                break
+                        file.close()
+                    elif menu2 == '2':
+                        file = open(secretFile, 'w')
+                        print('Введите строку в файл SECRET.TXT')
+                        inString = input()
+                        file.write(inString)
+                        file.close()
+                    elif menu2 == 'cancel':
+                        break
+                elif menu == '2':
+                    print("1 - Записать в файл NONSEC.TXT")
+                    print("2 - Запустить GAME.EXE")
+                    if virusFlag:
+                        print("3 - Прочитать содержимое SECRET.TXT")
+                    print("cancel - Выйти из каталога")
+                    menu2 = input()
+                    if menu2 == '1':
+                        file = open(nonSecFile, 'w')
+                        print('Введите строку в файл NONSEC.TXT')
+                        inString = input()
+                        file.write(inString)
+                        file.close()
+                    elif menu2 == '2':
+                        gameExe()
+                    elif menu2 == '3':
+                        file = open(newSecretFile, 'r')
+                        while True:
+                            line = file.readline()
+                            print(line)
+                            if not line:
+                                break
+                        file.close()
+                    elif menu2 == 'cancel':
+                        break
+                elif menu == 'exit':
+                    break
+            break
+        elif currentUser.access == 'b':
+            while True:
+                print("Вы обычный пользователь с уровнем допуска B")
+                print("1 - Войти в каталог SECRET")
+                print("2 - Войти в каталог NONSEC")
+                print("exit - Выйти с данной учетной записи")
+                menu = input()
+                if menu == '1':
+                    while True:
+                        print("1 - Прочитать файл SECRET.TXT")
+                        print("2 - Записать в файл SECRET.TXT")
+                        print("cancel - выйти из каталога")
+                        menu2 = input()
+                        if menu2 == '1':
+                            print("У вас нет нужных прав!")
+                        elif menu2 == '2':
+                            print("У вас нет нужных прав!")
+                        elif menu2 == 'cancel':
+                            break
+                elif menu == '2':
+                    while True:
+                        print("1 - Записать в файл NONSEC.TXT")
+                        print("2 - Прочитать файл NONSEC.TXT")
+                        print("3 - Запустить GAME.EXE")
+                        if virusFlag:
+                            print("4 - Прочитать содержимое SECRET.TXT")
+                        print("cancel - выйти из каталога")
+                        menu2 = input()
+                        if menu2 == '1':
+                            file = open(nonSecFile, 'w')
+                            print('Введите строку в файл NONSEC.TXT')
+                            inString = input()
+                            file.write(inString)
+                            file.close()
+                        elif menu2 == '2':
+                            file = open(nonSecFile, 'r')
+                            while True:
+                                line = file.readline()
+                                print(line)
+                                if not line:
+                                    break
+                            file.close()
+                        elif menu2 == '3':
+                            gameExe()
+                        elif menu2 == '4':
+                            file = open(newSecretFile, 'r')
+                            while True:
+                                line = file.readline()
+                                print(line)
+                                if not line:
+                                    break
+                            file.close()
+                        elif menu2 == 'cancel':
+                            break
+                elif menu == 'exit':
+                    break
+            break
+    time2 = datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")
+    al = open(nameLog, 'a')
+    al.write(time2 + '\n')
+    al.close()
+    menu = int(input("Введите 1 - для выхода, 0 - для смены пользователя. "))
+    if menu == 1:
+        break
